@@ -3,8 +3,8 @@ package database.service;
 import Entity.Customer;
 import Entity.StatisticPurchase;
 import database.interfaces.DbConnector;
+import exception.ResultException;
 
-import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -18,15 +18,15 @@ public class JDBCService {
     }
 
     // Поиск покупателей с фамилией
-    public List<Customer> findByLastName(String lastName) {
-        if (connector == null || lastName == null || lastName.isEmpty()) return null;
+    public List<Customer> findByLastName(String lastName) throws ResultException {
+        if (connector == null || lastName == null || lastName.isEmpty())
         lastName = lastName.replaceAll("[^0-9a-zA-Zа-яА-Я_-]", "");
         final String SQL_QUERY_FINDBYLASTNAME = "SELECT \"Customers_ID\", \"LastName\", \"FirstName\" " +
                 "FROM public.\"Customers\" where \"LastName\" = '" + lastName + "';";
         return resultFormation(connector.executeQuery(SQL_QUERY_FINDBYLASTNAME));
     }
 
-    public List<Customer> findBuyMoreThan(String productName, int minTimes) {
+    public List<Customer> findBuyMoreThan(String productName, int minTimes) throws ResultException {
         if (connector == null || productName == null || productName.isEmpty() || minTimes < 0) return null;
         productName = productName.replaceAll("[^0-9a-zA-Zа-яА-Я_-]", "");
         final String SQL_QUERY_FINDBUYMORETHAN = "SELECT \"Customers_ID\", \"LastName\", \"FirstName\" " +
@@ -36,7 +36,7 @@ public class JDBCService {
         return resultFormation(connector.executeQuery(SQL_QUERY_FINDBUYMORETHAN));
     }
 
-    public List<Customer> findByMinMaxPurchaseValue(Double minExpenses, Double maxExpenses) {
+    public List<Customer> findByMinMaxPurchaseValue(Double minExpenses, Double maxExpenses) throws ResultException {
         if (connector == null) return null;
         String SQL_QUERY_FINDBYMINMAXPURCHASEVALUE = "with All_Purchases (\"Customers_ID\", \"FirstName\", \"LastName\", Sum_cost) as " +
                 "(SELECT \"Customers_ID\", \"FirstName\", \"LastName\", sum(\"Cost\") as Sum_cost " +
@@ -47,7 +47,7 @@ public class JDBCService {
         return resultFormation(connector.executeQuery(SQL_QUERY_FINDBYMINMAXPURCHASEVALUE));
     }
 
-    public List<Customer> findLeastBought(int limitResult) {
+    public List<Customer> findLeastBought(int limitResult) throws ResultException {
         if (connector == null) return null;
         String SQL_QUERY_FINDLISTBOUGHT = "SELECT \"Customers_ID\", \"LastName\", \"FirstName\" " +
                 "FROM ((public.\"Customers\" left join public.\"Purchases\" using (\"Customers_ID\")) left join public.\"Products\" using (\"Products_ID\")) " +
@@ -55,7 +55,7 @@ public class JDBCService {
         return resultFormation(connector.executeQuery(SQL_QUERY_FINDLISTBOUGHT));
     }
 
-    public List<Customer> getStatistic(Date startDate, Date endDate) {
+    public List<Customer> getStatistic(Date startDate, Date endDate) throws ResultException {
         if (startDate == null || endDate == null) return null;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         final String SQL_QUERY__GETSTATISTIC = "select \"Customers_ID\" ,\"LastName\", \"FirstName\", \"Name\" , sum (\"Cost\") as \"Expenses\" " +
@@ -89,11 +89,11 @@ public class JDBCService {
                 }
             }
             if (resultQuery.containsKey("Name") && resultQuery.containsKey("Expenses")) {
-                listStatisticPurchase = new ArrayList<>();
+                if (listStatisticPurchase == null) listStatisticPurchase = new ArrayList<>();
                 String StatisticPurchasesName = resultQuery.get("Name").get(i);
                 String StatisticPurchasesExpenses = resultQuery.get("Expenses").get(i);
                 listStatisticPurchase.add(
-                        new StatisticPurchase(StatisticPurchasesName, StatisticPurchasesExpenses));
+                        new StatisticPurchase(StatisticPurchasesName, Double.valueOf(StatisticPurchasesExpenses)));
             }
         }
         if (customer != null) {

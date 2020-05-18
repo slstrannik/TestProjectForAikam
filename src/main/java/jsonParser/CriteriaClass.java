@@ -1,5 +1,7 @@
 package jsonParser;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class CriteriaClass {
@@ -89,6 +91,7 @@ public class CriteriaClass {
                 startDate == null &&
                 endDate == null);
     }
+
     @Override
     public String toString() {
         return "CriteriaClass{" +
@@ -101,5 +104,56 @@ public class CriteriaClass {
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 '}';
+    }
+
+    public String toJson() {
+        StringBuilder jsonStringBuilder = new StringBuilder("{");
+        if (lastName != null) {
+            jsonStringBuilder.append("\"lastName\":");
+            jsonStringBuilder.append("\"").append(lastName).append("\"");
+            jsonStringBuilder.append(",");
+        }
+        if (productName != null) {
+            jsonStringBuilder.append("\"productName\":");
+            jsonStringBuilder.append("\"").append(productName).append("\"");
+            jsonStringBuilder.append(",");
+        }
+        if (minTimes != null) {
+            jsonStringBuilder.append("\"minTimes\":");
+            jsonStringBuilder.append(minTimes);
+            jsonStringBuilder.append(",");
+        }
+        if (minExpenses != null) {
+            jsonStringBuilder.append("\"minExpenses\":");
+            jsonStringBuilder.append(minExpenses);
+            jsonStringBuilder.append(",");
+        }
+        if (maxExpenses != null) {
+            jsonStringBuilder.append("\"maxExpenses\":");
+            jsonStringBuilder.append(maxExpenses);
+            jsonStringBuilder.append(",");
+        }
+        if (badCustomers != null) {
+            jsonStringBuilder.append("\"badCustomers\":");
+            jsonStringBuilder.append(badCustomers);
+            jsonStringBuilder.append(",");
+        }
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        if (startDate != null) {
+            jsonStringBuilder.append("\"startDate\":");
+            jsonStringBuilder.append("\"").append(dateFormat.format(startDate)).append("\"");
+            jsonStringBuilder.append(",");
+        }
+        if (endDate != null) {
+            jsonStringBuilder.append("\"endDate\":");
+            jsonStringBuilder.append("\"").append(dateFormat.format(endDate)).append("\"");
+            jsonStringBuilder.append(",");
+        }
+        if (!isEmpty()) {
+            int index = jsonStringBuilder.lastIndexOf(",");
+            jsonStringBuilder.delete(index, index + 1);
+        }
+        jsonStringBuilder.append("}");
+        return jsonStringBuilder.toString();
     }
 }

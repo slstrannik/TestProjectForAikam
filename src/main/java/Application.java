@@ -1,22 +1,31 @@
 import core.ProjectCore;
 import database.interfaces.DbConnector;
 import database.service.PostgreSqlDBConnector;
-import database.service.JDBCService;
-import jsonParser.JsonInputCriteriasParser;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.util.Date;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 
 public class Application {
-
-    public static void main(String[] args) throws ParseException {
-        DbConnector dbconnector =
-                new PostgreSqlDBConnector(
-                        "jdbc:postgresql://127.0.0.1:5432/dbtest", "postgres", "admin");
-        ProjectCore projectCore = new ProjectCore(new String[] {"stat", "input.json", "output.json"}, dbconnector);
-        projectCore.start();
+    public static void main(String[] args) {
+        String properiesFileName = "application.properties";
+        Properties properties = new Properties();
+        try {
+            properties.load(new FileInputStream(properiesFileName));
+        } catch (IOException e) {
+            System.out.println("Could not open properties file for setting database:" + properiesFileName);
+            return;
+        }
+        String url = properties.getProperty("db.url");
+        String user = properties.getProperty("db.user");
+        String pass = properties.getProperty("db.pass");
+        if (url == null || url.isEmpty()) System.out.println("field 'db.url' not found");
+        else if (user == null || user.isEmpty()) System.out.println("field 'db.user' not found");
+        else if (pass == null || pass.isEmpty()) System.out.println("field 'db.pass' not found");
+        else {
+            DbConnector dbconnector = new PostgreSqlDBConnector(url, user, pass);
+            ProjectCore projectCore = new ProjectCore(args, dbconnector);
+            projectCore.start();
+        }
     }
-
 }

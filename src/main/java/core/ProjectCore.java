@@ -3,15 +3,13 @@ package core;
 import Entity.Customer;
 import database.interfaces.DbConnector;
 import database.service.JDBCService;
-import jsonParser.CriteriaClass;
-import jsonParser.JsonInputCriteriasParser;
+import exception.ResultException;
+import jsonParser.*;
 
+import java.sql.ResultSet;
 import java.util.List;
 
 public class ProjectCore {
-
-    private final String STAT = "stat";
-    private final String SEARCH = "search";
 
     private JDBCService jdbcService;
     private String input;
@@ -28,37 +26,45 @@ public class ProjectCore {
     }
 
 
-    public boolean start() {
+    public void start() {
         if (jdbcService == null ||
                 input == null ||
                 output == null ||
-                (!arg.equalsIgnoreCase(STAT) && !arg.equalsIgnoreCase(SEARCH))) {
+                (!arg.equalsIgnoreCase(CriteriaTypeEnum.STAT.toString()) && !arg.equalsIgnoreCase(CriteriaTypeEnum.SEARCH.toString()))) {
             System.out.println("Error in arguments");
-            return false;
+            return;
         }
         JsonInputCriteriasParser jsonInputCriteriasParser = new JsonInputCriteriasParser(input);
-        List<CriteriaClass> criteriaClassList = jsonInputCriteriasParser.process();
-        if (arg.equals(SEARCH)) {
-            criteriaClassList.forEach(criteriaClass -> {
-                List<Customer> customerList = criteriaProcessing(criteriaClass);
-                if (customerList != null) customerList.forEach(customer -> System.out.println(customer.toString()));
-            });
-        } else if (arg.equals(STAT)) {
-            criteriaClassList.forEach(criteriaClass -> {
+        List<CriteriaClass> criteriaClassList = null;
+        try {
+            criteriaClassList = jsonInputCriteriasParser.process();
+            JsonOutputDataBuilder jsonOutputDataParser = new JsonOutputDataBuilder(CriteriaTypeEnum.valueOf(arg.toUpperCase()));
+            if (arg.equalsIgnoreCase(CriteriaTypeEnum.SEARCH.toString())) {
+                for (CriteriaClass criteriaClass : criteriaClassList) {
+                    List<Customer> customerList = criteriaProcessing(criteriaClass);
+                    if (customerList != null) jsonOutputDataParser.add(criteriaClass, customerList);
+                }
+            } else if (arg.equalsIgnoreCase(CriteriaTypeEnum.STAT.toString())) {
+                CriteriaClass criteriaClass = criteriaClassList.get(0);
                 List<Customer> customerList = statisticProcessing(criteriaClass);
-                if (customerList != null) customerList.forEach(customer -> System.out.println(customer.toString()));
-            });
+                if (customerList != null) jsonOutputDataParser.add(criteriaClass, customerList);
+            }
+            SaveJsonOutputDataClass saveJsonOutputDataClass = new SaveJsonOutputDataClass(output, jsonOutputDataParser);
+            saveJsonOutputDataClass.save();
+        } catch (ResultException e) {
+            SaveJsonOutputDataClass saveJsonOutputDataClass = new SaveJsonOutputDataClass(
+                    output, new JsonErrorOutputBuilder(e.getMessage()));
+            saveJsonOutputDataClass.save();
         }
-        return false;
     }
 
-    private List<Customer> criteriaProcessing(CriteriaClass criteriaClass) {
+    private List<Customer> criteriaProcessing(CriteriaClass criteriaClass) throws ResultException {
         List<Customer> customerList = null;
         if (criteriaClass.getBadCustomers() != null) {
             customerList = jdbcService.findLeastBought(criteriaClass.getBadCustomers());
         } else if(criteriaClass.getLastName() != null) {
             customerList = jdbcService.findByLastName(criteriaClass.getLastName());
-        } else if (criteriaClass.getProductName() != null && criteriaClass.getMinTimes() == null) {
+        } else if (criteriaClass.getProductName() != null && criteriaClass.getMinTimes() != null) {
             customerList = jdbcService.findBuyMoreThan(criteriaClass.getProductName(), criteriaClass.getMinTimes());
         } else if (criteriaClass.getMinExpenses() != null && criteriaClass.getMaxExpenses() != null) {
             customerList = jdbcService.findByMinMaxPurchaseValue(criteriaClass.getMinExpenses(), criteriaClass.getMaxExpenses());
@@ -66,11 +72,11 @@ public class ProjectCore {
         return customerList;
     }
 
-    private List<Customer> statisticProcessing(CriteriaClass criteriaClass) {
+    private List<Customer> statisticProcessing(CriteriaClass criteriaClass) throws ResultException {
         List<Customer> customerList = null;
         if (criteriaClass.getStartDate() != null && criteriaClass.getEndDate() != null) {
             customerList = jdbcService.getStatistic(criteriaClass.getStartDate(), criteriaClass.getEndDate());
-        }
+        } else throw new ResultException("Time interval is set incorrectly");
         return  customerList;
     }
 }

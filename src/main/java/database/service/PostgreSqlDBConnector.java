@@ -1,6 +1,7 @@
 package database.service;
 
 import database.interfaces.DbConnector;
+import exception.ResultException;
 
 import java.sql.*;
 import java.util.*;
@@ -11,7 +12,6 @@ public class PostgreSqlDBConnector implements DbConnector {
     String pass;
 
     Connection connection;
-
     public PostgreSqlDBConnector(String dbURL, String user, String pass) {
         try {
             Class.forName("org.postgresql.Driver");
@@ -30,7 +30,7 @@ public class PostgreSqlDBConnector implements DbConnector {
         }
     }
 
-    public Map<String, List<String>> executeQuery(String sql) {
+    public Map<String, List<String>> executeQuery(String sql) throws ResultException {
         if (connection == null) return null;
         PreparedStatement statement = null;
         Map<String, List<String>> result = null;
@@ -40,8 +40,7 @@ public class PostgreSqlDBConnector implements DbConnector {
             result = resultFormation(resultSet);
             resultSet.close();
         } catch (SQLException e) {
-            System.out.println("Error in query: " + sql);
-            e.printStackTrace();
+            throw new ResultException(e.getMessage());
         } finally {
             if (statement != null) {
                 try {

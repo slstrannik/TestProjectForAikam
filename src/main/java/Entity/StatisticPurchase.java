@@ -3,9 +3,9 @@ package Entity;
 public class StatisticPurchase {
 
     String name;
-    String expenses;
+    Double expenses;
 
-    public StatisticPurchase(String name, String expenses) {
+    public StatisticPurchase(String name, Double expenses) {
         this.name = name;
         this.expenses = expenses;
     }
@@ -18,7 +18,7 @@ public class StatisticPurchase {
         this.name = name;
     }
 
-    public String getExpenses() {
+    public Double getExpenses() {
         return expenses;
     }
 
@@ -30,7 +30,7 @@ public class StatisticPurchase {
                 '}';
     }
 
-    public void setExpenses(String expenses) {
+    public void setExpenses(Double expenses) {
         this.expenses = expenses;
     }
 }

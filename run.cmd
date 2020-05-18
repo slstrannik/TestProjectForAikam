@@ -1,1 +1,0 @@
-java -jar target/TestProjectForAikam-0.0.1.jar stat input.json output.json
